@@ -1,0 +1,22 @@
+{
+  "name": "squad20-reapta-inclusiva",
+  "version": "1.0.0",
+  "description": "Projeto de análise e otimização de vendas desenvolvido para a REAPTA INCLUSIVA pelo Squad 20, em parceria com a Residência Porto Digital na Universidade Católica de Brasília (UCB).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EliseSugiyama/SQUAD20-REAPTA-INCLUSIVA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/EliseSugiyama/SQUAD20-REAPTA-INCLUSIVA/issues"
+  },
+  "homepage": "https://github.com/EliseSugiyama/SQUAD20-REAPTA-INCLUSIVA#readme",
+  "workspaces": ["apps/*"]
+}

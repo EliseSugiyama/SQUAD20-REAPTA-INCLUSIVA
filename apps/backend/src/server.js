@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../../..', '.env') });
 const express = require('express');
 const cors = require('cors');
@@ -18,7 +19,9 @@ app.use(express.json());
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    const uploadDir = path.resolve(__dirname, 'uploads');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
@@ -31,6 +34,10 @@ const upload = multer({ storage: storage });
 
 app.get('/', (req, res) => {
   res.send('🚀 Backend do SQUAD-20 rodando!');
+});
+
+app.get('/api/upload', (req, res) => {
+  res.status(405).json({ erro: 'Use POST /api/upload para enviar a planilha.' });
 });
 
 app.post('/api/upload', upload.single('planilha'), async (req, res) => { 

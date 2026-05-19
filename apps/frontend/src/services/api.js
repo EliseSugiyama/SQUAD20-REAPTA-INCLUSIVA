@@ -14,3 +14,10 @@ export const uploadPlanilha = async (arquivo) => {
   
   return response.data;
 };
+
+//Novo tbm
+
+export const buscarVendas = async () => {
+  const response = await api.get('/vendas');
+  return response.data;
+};

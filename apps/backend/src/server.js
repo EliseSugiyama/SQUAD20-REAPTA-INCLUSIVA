@@ -6,6 +6,10 @@ const multer = require('multer');
 const { processarPlanilha } = require('./services/excelService');
 const { salvarDadosNoBanco } = require('./services/supabaseService');
 
+//Novo require adicionado 
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -58,6 +62,23 @@ app.post('/api/upload', upload.single('planilha'), async (req, res) => {
   } catch (error) {
     console.error('Erro no upload:', error);
     res.status(500).json({ erro: 'Falha no servidor.', detalhe: error.message });
+  }
+});
+
+// -- Rota que eu coloquei para visualizar dados sem upload -- 
+
+app.get('/api/vendas', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('vendas_dados')
+      .select('*')
+      .limit(200);
+
+    if (error) throw error;
+
+    res.json({ sucesso: true, vendas: data });
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao buscar vendas.', detalhe: error.message });
   }
 });
 

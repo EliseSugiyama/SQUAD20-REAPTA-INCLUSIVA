@@ -29,7 +29,7 @@ CREATE TABLE vendas_dados (
   
   tabela varchar,
   venda text,
-  data_venda date,
+  dataVenda date,
   entrega date,
   email varchar,
   cidade varchar,

@@ -60,34 +60,92 @@ const salvarDadosNoBanco = async (dadosProcessados) => {
       return new Date((utcValue + totalSeconds) * 1000);
     };
 
-    const transformarData = (valor) => {
-      if (!valor) return null;
-      if (typeof valor === 'number') return excelDateToJSDate(valor);
-      const data = new Date(valor);
+    const parseDateString = (valor) => {
+      if (typeof valor !== 'string') return null;
+      const texto = valor.trim();
+      if (!texto) return null;
+
+      const diaMesAno = texto.match(/^([0-3]?\d)[/\-]([0-1]?\d)[/\-](\d{4})$/);
+      if (diaMesAno) {
+        const [, dia, mes, ano] = diaMesAno;
+        return new Date(Number(ano), Number(mes) - 1, Number(dia));
+      }
+
+      const anoMesDia = texto.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+      if (anoMesDia) {
+        const [, ano, mes, dia] = anoMesDia;
+        return new Date(Number(ano), Number(mes) - 1, Number(dia));
+      }
+
+      const data = new Date(texto);
       return Number.isNaN(data.getTime()) ? null : data;
     };
 
-    const mapVendasParaDB = (venda) => ({
-      tabela: venda.Tabela ?? venda.tabela ?? 'Desconhecido',
-      venda: venda.Venda ?? venda.venda ?? null,
-      data_venda: transformarData(venda['Data Venda'] ?? venda.dataVenda ?? venda.data_venda),
-      entrega: transformarData(venda.Entrega ?? venda.entrega),
-      email: venda.Email ?? venda.email ?? null,
-      cidade: venda.Cidade ?? venda.cidade ?? null,
-      estado: venda.Estado ?? venda.estado ?? null,
-      vendedor: venda.Vendedor ?? venda.vendedor ?? null,
-      codigos: transformarNumero(venda.Codigos ?? venda['Códigos'] ?? venda.codigos),
-      produto: venda.Produto ?? venda.produto ?? null,
-      comissao: transformarNumero(venda.Comissao ?? venda.comissao),
-      entregue: transformarNumero(venda.Entregue ?? venda.entregue),
-      entregar: transformarNumero(venda.Entregar ?? venda.entregar),
-      quantidade_vendida: transformarNumero(venda['Quantidade vendida'] ?? venda.QuantidadeVenda ?? venda.quantidade_vendida ?? venda.quantidadeTotal),
-      custo_unitario: transformarNumero(venda['Custo unitário'] ?? venda.CustoUnitario ?? venda.custo_unitario),
-      preco_venda: transformarNumero(venda['Preço venda'] ?? venda.PrecoVenda ?? venda.preco_venda),
-      desconto_produto: transformarNumero(venda['Desconto produto'] ?? venda.DescontoProduto ?? venda.desconto_produto),
-      valor_item: transformarNumero(venda['Valor item'] ?? venda.Valor ?? venda.valor_item),
-      id_arquivos_excel: arquivoId
-    });
+    const transformarData = (valor) => {
+      if (valor === null || valor === undefined || valor === '') return null;
+      let data;
+      if (typeof valor === 'number') {
+        data = excelDateToJSDate(valor);
+      } else if (typeof valor === 'string') {
+        data = parseDateString(valor);
+      } else if (valor instanceof Date) {
+        data = valor;
+      } else {
+        return null;
+      }
+      if (!data || Number.isNaN(data.getTime())) return null;
+      return data.toISOString().slice(0, 10);
+    };
+
+    const normalizeKey = (key) =>
+      key
+        .toString()
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .replace(/[^a-z0-9]/g, '');
+
+    const normalizeRowKeys = (row) =>
+      Object.entries(row).reduce((acc, [key, value]) => {
+        acc[normalizeKey(key)] = value;
+        return acc;
+      }, {});
+
+    const getRowValue = (row, ...keys) => {
+      for (const key of keys) {
+        const normalized = normalizeKey(key);
+        if (row[normalized] !== undefined && row[normalized] !== null) {
+          return row[normalized];
+        }
+      }
+      return null;
+    };
+
+    const mapVendasParaDB = (venda) => {
+      const row = normalizeRowKeys(venda);
+      return {
+        tabela: getRowValue(row, 'Tabela', 'tabela') ?? 'Desconhecido',
+        venda: getRowValue(row, 'Venda', 'venda') ?? null,
+        data_venda: transformarData(getRowValue(row, 'Data Venda', 'dataVenda', 'data_venda')),
+        entrega: transformarData(getRowValue(row, 'Entrega', 'entrega')),
+        email: getRowValue(row, 'Email', 'email') ?? null,
+        cidade: getRowValue(row, 'Cidade', 'cidade') ?? null,
+        estado: getRowValue(row, 'Estado', 'estado') ?? null,
+        vendedor: getRowValue(row, 'Vendedor', 'vendedor') ?? null,
+        codigos: transformarNumero(getRowValue(row, 'Codigos', 'Códigos', 'codigos')),
+        produto: getRowValue(row, 'Produto', 'produto') ?? null,
+        comissao: transformarNumero(getRowValue(row, 'Comissao', 'comissão', 'comissao')),
+        entregue: transformarNumero(getRowValue(row, 'Entregue', 'entregue')),
+        entregar: transformarNumero(getRowValue(row, 'Entregar', 'entregar')),
+        quantidade_vendida: transformarNumero(getRowValue(row, 'Quantidade vendida', 'Quantidade Vendida', 'QuantidadeVenda', 'quantidade_vendida', 'quantidadeTotal')),
+        custo_unitario: transformarNumero(getRowValue(row, 'Custo unitário', 'Custo Unitário', 'CustoUnitario', 'custo_unitario')),
+        preco_venda: transformarNumero(getRowValue(row, 'Preço venda', 'Preço Venda', 'PrecoVenda', 'preco_venda')),
+        desconto_produto: transformarNumero(getRowValue(row, 'Desconto produto', 'Desconto Produto', 'DescontoProduto', 'desconto_produto')),
+        valor_item: transformarNumero(getRowValue(row, 'Valor item', 'Valor Item', 'Valor', 'valor_item')),
+        id_arquivos_excel: arquivoId
+      };
+    };
 
     const vendasComId = dadosProcessados.vendas.map(mapVendasParaDB);
     console.log('First venda mapped:', vendasComId[0]);

@@ -150,14 +150,26 @@ const salvarDadosNoBanco = async (dadosProcessados) => {
     const vendasComId = dadosProcessados.vendas.map(mapVendasParaDB);
     console.log('First venda mapped:', vendasComId[0]);
 
-    const { error: erroVendas } = await supabase
-      .from('vendas_dados')
-      .insert(vendasComId);
-
-    if (erroVendas) throw erroVendas;
+    // Insert vendas in batches to avoid large single inserts and add detailed logs
+    const totalVendas = vendasComId.length;
+    console.log('Total vendas to insert:', totalVendas);
+    const batchSize = 500;
+    for (let i = 0; i < totalVendas; i += batchSize) {
+      const batch = vendasComId.slice(i, i + batchSize);
+      const batchIndex = Math.floor(i / batchSize) + 1;
+      console.log(`Inserting vendas batch ${batchIndex} (items: ${batch.length})`);
+      const { error: erroVendas } = await supabase
+        .from('vendas_dados')
+        .insert(batch);
+      if (erroVendas) {
+        console.error(`Erro ao inserir batch ${batchIndex}:`, erroVendas.message || erroVendas);
+        throw erroVendas;
+      }
+      console.log(`Batch ${batchIndex} inserted successfully`);
+    }
 
     console.log('Arquivo salvo no Supabase:', arquivoSalvo);
-    console.log('Número de vendas inseridas:', vendasComId.length);
+    console.log('Número de vendas inseridas:', totalVendas);
 
     return { sucesso: true, arquivoId };
 

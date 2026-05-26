@@ -19,3 +19,18 @@ export const buscarVendas = async () => {
   const response = await api.get('/vendas');
   return response.data;
 };
+
+export const listarArquivos = async () => {
+  const response = await api.get('/arquivos');
+  return response.data;
+};
+
+export const buscarArquivoPorId = async (arquivoId) => {
+  const response = await api.get(`/arquivos/${arquivoId}`);
+  return response.data;
+};
+
+export const buscarVendasPorArquivo = async (arquivoId) => {
+  const response = await api.get(`/vendas/arquivo/${arquivoId}`);
+  return response.data;
+};
